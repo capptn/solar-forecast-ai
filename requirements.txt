@@ -4,3 +4,6 @@ meteostat
 pandas
 pvlib
 numpy
+openmeteo_requests
+requests_cache
+retry_requests

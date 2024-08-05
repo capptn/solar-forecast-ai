@@ -113,6 +113,8 @@ def calculate_daily_solar_indices(date, latitude, longitude, orientation, tilt):
 
     indices = []
     values = []
+    dates = []
+    results = []
 
     for hour in range(24):
         date_time = datetime(date2.year, date2.month, date2.day, hour)
@@ -125,9 +127,12 @@ def calculate_daily_solar_indices(date, latitude, longitude, orientation, tilt):
             temperature, humidity, sun_minutes
         )
         indices.append((date_time, solar_index))
-        values.append({"hour": date_time.strftime("%H"),"value": float(solar_index)})
+        values.append(round(float(solar_index), 1))
+        dates.append(date_time.strftime("%H"))
     
-    return values
+    results = {"time": dates,"power": values}
+
+    return results
 
 def calculate_actual_solar_indices(latitude, longitude, orientation, tilt):
     """Calculate solar indices for each hour of the given date."""
