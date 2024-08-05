@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 import pandas as pd
 from meteostat import Point, Stations, Daily, Hourly
 from geopy.distance import geodesic
+from weatherforecast import get_wetaher_forecast
 
 def find_nearest_station_with_zsun(latitude, longitude, date):
     # Radius definieren (z.B. 50 km)
@@ -11,7 +12,7 @@ def find_nearest_station_with_zsun(latitude, longitude, date):
 
     # Wetterstationen im Umkreis finden
     stations = Stations()
-    stations = stations.nearby(51.3656, 7.3834)
+    stations = stations.nearby(latitude, longitude)
 
     newstations = stations.fetch(100)
 
@@ -53,7 +54,7 @@ def get_weather_data(latitude, longitude, date):
     # Fetch hourly weather data
     data = Hourly(the_station, start, end)
     data = data.fetch()
-    print('DATA: ', data)
+    #print('DATA: ', data)
     # Extract required data
     temperatures = data['temp'].tolist()
     humidities = data['rhum'].tolist()
@@ -99,7 +100,11 @@ def calculate_solar_index(date_time, latitude, longitude, orientation, tilt, tem
 
 def calculate_daily_solar_indices(date, latitude, longitude, orientation, tilt):
     """Calculate solar indices for each hour of the given date."""
-    temperatures, humidities, sun_minutes_per_hour = get_weather_data(latitude, longitude, date)
+
+    date2 = datetime.strptime(date, "%d-%m-%Y")
+
+    #temperatures, humidities, sun_minutes_per_hour = get_weather_data(latitude, longitude, date2)
+    sun_minutes_per_hour, temperatures, humidities = get_wetaher_forecast(date2.strftime("%Y-%m-%d") ,latitude, longitude)
     
 
     print(temperatures)
@@ -107,8 +112,10 @@ def calculate_daily_solar_indices(date, latitude, longitude, orientation, tilt):
     print(sun_minutes_per_hour)
 
     indices = []
+    values = []
+
     for hour in range(24):
-        date_time = datetime(date.year, date.month, date.day, hour)
+        date_time = datetime(date2.year, date2.month, date2.day, hour)
         temperature = temperatures[hour]
         humidity = humidities[hour]
         sun_minutes = sun_minutes_per_hour[hour]
@@ -118,17 +125,21 @@ def calculate_daily_solar_indices(date, latitude, longitude, orientation, tilt):
             temperature, humidity, sun_minutes
         )
         indices.append((date_time, solar_index))
+        values.append({"hour": date_time.strftime("%H"),"value": float(solar_index)})
     
-    return indices
+    return values
 
 def calculate_actual_solar_indices(latitude, longitude, orientation, tilt):
     """Calculate solar indices for each hour of the given date."""
-    temperatures, humidities, sun_minutes_per_hour = get_weather_data(latitude, longitude, date)
+
+    datenow = datetime.today()
+
+    temperatures, humidities, sun_minutes_per_hour = get_weather_data(latitude, longitude, datetime(int(datetime.today().strftime('%Y')), int(datetime.today().strftime('%m')), int(datetime.today().strftime('%d'))))
     
 
-    print(temperatures)
-    print(humidities)
-    print(sun_minutes_per_hour)
+    #print(temperatures)
+    #print(humidities)
+    #print(sun_minutes_per_hour)
 
     indices = []
     date_time = datetime(int(datetime.today().strftime('%Y')), int(datetime.today().strftime('%m')), int(datetime.today().strftime('%d')), int(datetime.today().strftime('%H')))
@@ -141,15 +152,11 @@ def calculate_actual_solar_indices(latitude, longitude, orientation, tilt):
         temperature, humidity, sun_minutes
     )
     indices.append((date_time, solar_index, temperature, humidity, sun_minutes))
-    
+    print(indices)
     return indices
 
 # Example usage
-date = datetime(2024, 7, 31)
-latitude = 52.52
-longitude = 13.405
-orientation = 180  # Facing south
-tilt = 30  # Typical tilt angle
+
 
 #daily_solar_indices = calculate_daily_solar_indices(
 #    date, latitude, longitude, orientation, tilt
@@ -158,9 +165,9 @@ tilt = 30  # Typical tilt angle
 #for date_time, solar_index in daily_solar_indices:
 #    print(f"Solar Index at {date_time}: {solar_index:.2f}")
 
-solar_indices = calculate_actual_solar_indices(
-    latitude, longitude, orientation, tilt
-)
+#solar_indices = calculate_actual_solar_indices(
+#    latitude, longitude, orientation, tilt
+#)
 
 
-print(f"Solar Index at {solar_indices[0][0]}: {solar_indices[0][1]:.2f}, {solar_indices[0][2]:.2f},{solar_indices[0][3]:.2f} ,{solar_indices[0][4]:.2f}")
+#print(f"Solar Index at {solar_indices[0][0]}: {solar_indices[0][1]:.2f}, {solar_indices[0][2]:.2f},{solar_indices[0][3]:.2f} ,{solar_indices[0][4]:.2f}")
