@@ -7,3 +7,5 @@ numpy
 openmeteo_requests
 requests_cache
 retry_requests
+firebase-admin 
+google-cloud-firestore
