@@ -62,7 +62,7 @@ def get_weather_data(latitude, longitude, date):
     
     return temperatures, humidities, sun_minutes_per_hour
 
-def calculate_solar_index(date_time, latitude, longitude, orientation, tilt, temperature, humidity, sun_minutes):
+def calculate_solar_index(date_time, latitude, longitude, orientation, tilt, temperature, humidity, sun_minutes, ghi_val, dhi_val, dni_val):
     """Calculate the solar yield index based on sun minutes."""
     # Calculate solar position
     solar_position = pvlib.solarposition.get_solarposition(date_time, latitude, longitude)
@@ -70,7 +70,7 @@ def calculate_solar_index(date_time, latitude, longitude, orientation, tilt, tem
     solar_azimuth = solar_position['azimuth'].values[0]
     
     # Calculate angle of incidence
-    aoi = pvlib.irradiance.aoi(tilt, orientation, solar_zenith, solar_azimuth)
+    #aoi = pvlib.irradiance.aoi(tilt, orientation, solar_zenith, solar_azimuth)
     
     # Assume sun minutes is a fraction of the hour (e.g., 30 minutes = 0.5)
     sun_fraction = sun_minutes / 60
@@ -79,13 +79,20 @@ def calculate_solar_index(date_time, latitude, longitude, orientation, tilt, tem
     max_irradiance = 1000  # Example value
     
     # Calculate the irradiance on the plane of the array
+    #poa_irradiance = pvlib.irradiance.get_total_irradiance(
+    #    tilt, orientation, solar_zenith, solar_azimuth,
+    #    dni=max_irradiance * sun_fraction,
+    #    ghi=max_irradiance * sun_fraction * np.cos(np.radians(solar_zenith)),
+    #    dhi=max_irradiance * sun_fraction * (1 - np.cos(np.radians(solar_zenith))) / 2
+    #)
+    
     poa_irradiance = pvlib.irradiance.get_total_irradiance(
         tilt, orientation, solar_zenith, solar_azimuth,
-        dni=max_irradiance * sun_fraction,
-        ghi=max_irradiance * sun_fraction * np.cos(np.radians(solar_zenith)),
-        dhi=max_irradiance * sun_fraction * (1 - np.cos(np.radians(solar_zenith))) / 2
+        dni=dni_val,
+        ghi=ghi_val,
+        dhi=dhi_val
     )
-    
+
     # Extract the total plane of array irradiance (poa_global)
     poa_global = poa_irradiance['poa_global']
     
@@ -104,12 +111,15 @@ def calculate_daily_solar_indices(date, latitude, longitude, orientation, tilt):
     date2 = datetime.strptime(date, "%d-%m-%Y")
 
     #temperatures, humidities, sun_minutes_per_hour = get_weather_data(latitude, longitude, date2)
-    sun_minutes_per_hour, temperatures, humidities = get_wetaher_forecast(date2.strftime("%Y-%m-%d") ,latitude, longitude)
+    sun_minutes_per_hour, temperatures, humidities, ghi_list, dhi_list, dni_list = get_wetaher_forecast(date2.strftime("%Y-%m-%d") ,latitude, longitude)
     
-
+    print("WETTERDATEN:")
     print(temperatures)
     print(humidities)
     print(sun_minutes_per_hour)
+    print(ghi_list)
+    print(dhi_list)
+    print(dni_list)
 
     indices = []
     values = []
@@ -121,10 +131,13 @@ def calculate_daily_solar_indices(date, latitude, longitude, orientation, tilt):
         temperature = temperatures[hour]
         humidity = humidities[hour]
         sun_minutes = sun_minutes_per_hour[hour]
+        ghi_val = ghi_list[hour]
+        dhi_val = dhi_list[hour]
+        dni_val = dni_list[hour]
         
         solar_index = calculate_solar_index(
             date_time, latitude, longitude, orientation, tilt,
-            temperature, humidity, sun_minutes
+            temperature, humidity, sun_minutes, ghi_val, dhi_val, dni_val
         )
         indices.append((date_time, solar_index))
         values.append(round(float(solar_index), 1))
@@ -162,13 +175,19 @@ def calculate_actual_solar_indices(latitude, longitude, orientation, tilt):
 
 # Example usage
 
+date = "09-08-2024"
+latitude = 51.60
+longitude = 7.61
+orientation = 180
+tilt= 30
 
-#daily_solar_indices = calculate_daily_solar_indices(
-#    date, latitude, longitude, orientation, tilt
-#)
+daily_solar_indices = calculate_daily_solar_indices(
+    date, latitude, longitude, orientation, tilt
+)
 
-#for date_time, solar_index in daily_solar_indices:
-#    print(f"Solar Index at {date_time}: {solar_index:.2f}")
+print(daily_solar_indices)
+
+
 
 #solar_indices = calculate_actual_solar_indices(
 #    latitude, longitude, orientation, tilt
