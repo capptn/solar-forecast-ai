@@ -12,8 +12,8 @@ def get_wetaher_forecast(date, latitude, longitude):
 
 	url = "https://api.open-meteo.com/v1/forecast"
 	params = {
-		"latitude": 52.52,
-		"longitude": 13.41,
+		"latitude": latitude,
+		"longitude": longitude,
 		"minutely_15": ["sunshine_duration","temperature_2m", "relative_humidity_2m", "shortwave_radiation", "diffuse_radiation", "direct_normal_irradiance"],
 		"start_date": date,
 		"end_date": date
